@@ -57,3 +57,19 @@ The data in each SML program is provided in a hash table called `doc`. Using the
 ```
 
 And you can get the data using Racket's dictionary API.
+
+
+# FAQ
+## Q: What does the S in SML stand for?
+
+A: Small, Silly, Stupid, Smart, S-Expression, Stunning, Something else? I don't know, you pick.
+
+## Q: How is this related to Standard ML?
+
+A: It's not. Standard ML is awesome though, and you should check out [SML/NJ][smlnj].
+
+## Q: Why another markup language?
+
+A: I had a CV to write, and I got sick of every other markup language. And its only about 100 lines, why not?
+
+[smlnj]: https://www.smlnj.org/
