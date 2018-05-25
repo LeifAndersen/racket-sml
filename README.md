@@ -41,7 +41,7 @@ title: "A readme file"
 author: [{name: "Leif"
           location: {{Cambridge, @MA}}}
          {name: "Ben"
-          location: {{Bostn, @MA}}}]
+          location: {{Boston, @MA}}}]
 
 (define MA "Massachusetts")
 ```
