@@ -17,10 +17,10 @@
 (define-syntax-parser -app
   [(_ x:expr ...)
    #:when (eq? (syntax-property this-syntax 'paren-shape) #\{)
-   #'(let () (sml-begin #f () x ...))]
+   (syntax/loc this-syntax (let () (sml-begin #f hash () x ...)))]
   [(_ x:expr ...)
    #:when (eq? (syntax-property this-syntax 'paren-shape) #\[)
-   (syntax/loc this-syntax (list x ...))]
+   (syntax/loc this-syntax (let () (sml-begin #f list () x ...)))]
   [(_ x ...+)
    (syntax/loc this-syntax (#%app x ...))])
 
@@ -35,26 +35,26 @@
      [else #'(#%top . x)])])
 
 (define-syntax-parser -module-begin
-  [(_ x:id exprs body ...)
+  [(_ x:id proc:id exprs body ...)
    #'(#%module-begin
       (provide x)
-      (sml-begin x exprs body ...))])
+      (sml-begin x proc exprs body ...))])
 
 (define-syntax-parser sml-begin
-  [(_ #f (exprs ...))
+  [(_ #f proc:id (exprs ...))
    #:with (rev-exprs ...) (reverse (attribute exprs))
-   #'(hash rev-exprs ...)]
-  [(_ x:id (exprs ...))
+   #'(proc rev-exprs ...)]
+  [(_ x:id proc:id (exprs ...))
    #:with (rev-exprs ...) (reverse (attribute exprs))
-   #'(define x (hash rev-exprs ...))]
-  [(_ x (exprs ...) b1 body ...)
+   #'(define x (proc rev-exprs ...))]
+  [(_ x proc:id (exprs ...) b1 body ...)
    (define expanded (local-expand #'b1 'module
                                   (append (kernel-form-identifier-list)
                                           (list #'provide #'require))))
    (syntax-parse expanded
      #:literals (begin)
      [(begin b ...)
-      #'(sml-begin x (exprs ...) b ... body ...)]
+      #'(sml-begin x proc (exprs ...) b ... body ...)]
      [(id*:id . rest)
       #:when (ormap (lambda (kw) (free-identifier=? #'id* kw))
                     (syntax->list #'(require
@@ -67,21 +67,27 @@
                                       #%require
                                       #%provide
                                       #%declare)))
-      #`(begin #,expanded (sml-begin x (exprs ...) body ...))]
+      #`(begin #,expanded (sml-begin x proc (exprs ...) body ...))]
      [_
-      #`(sml-begin x (b1 exprs ...) body ...)])])
+      #`(sml-begin x proc (b1 exprs ...) body ...)])])
 
 (module reader syntax/module-reader
   sml
   #:wrapper1 (λ (t)
                (parameterize ([current-readtable (scribble:make-at-readtable)])
                  (parameterize ([current-readtable (make-str-readtable)])
-                   (list* 'doc '() (t)))))
+                   (list* 'doc 'hash '() (t)))))
 
   (require (prefix-in scribble: scribble/reader)
            syntax/readerr
            racket/list
            racket/port)
+
+  (define (make-info key default use-default)
+    (case key
+      [(drracket:default-filters) '(("S-Markup Language Sources" "*.sml"))]
+      [(drracket:default-extension) "sml"]
+      [else (use-default key default)]))
 
   (define (make-str-readtable #:readtable [base-readtable (current-readtable)])
     (make-readtable base-readtable
