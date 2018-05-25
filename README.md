@@ -22,7 +22,7 @@ title: "A readme file"
 author: ["Leif" "Ben"]
 ```
 
-Any values inside of curly braces (`[` and `]`) becomes a dictionary:
+Any values inside of curly braces (`{` and `}`) becomes a dictionary:
 
 ```
 #lang sml
