@@ -17,7 +17,7 @@
 (define-syntax-parser -app
   [(_ x:expr ...)
    #:when (eq? (syntax-property this-syntax 'paren-shape) #\{)
-   #'(hash x ...)]
+   #'(let () (sml-begin #f () x ...))]
   [(_ x:expr ...)
    #:when (eq? (syntax-property this-syntax 'paren-shape) #\[)
    (syntax/loc this-syntax (list x ...))]
@@ -29,7 +29,8 @@
    (define x-str (symbol->string (syntax-e #'x)))
    (cond
      [(regexp-match? #rx":$" x-str)
-      (define/syntax-parse new-x (format-id this-syntax (substring x-str 0 (sub1 (string-length x-str)))))
+      (define/syntax-parse new-x
+        (format-id this-syntax (substring x-str 0 (sub1 (string-length x-str)))))
       #''new-x]
      [else #'(#%top . x)])])
 
@@ -40,10 +41,13 @@
       (sml-begin x exprs body ...))])
 
 (define-syntax-parser sml-begin
+  [(_ #f (exprs ...))
+   #:with (rev-exprs ...) (reverse (attribute exprs))
+   #'(hash rev-exprs ...)]
   [(_ x:id (exprs ...))
    #:with (rev-exprs ...) (reverse (attribute exprs))
    #'(define x (hash rev-exprs ...))]
-  [(_ x:id (exprs ...) b1 body ...)
+  [(_ x (exprs ...) b1 body ...)
    (define expanded (local-expand #'b1 'module
                                   (append (kernel-form-identifier-list)
                                           (list #'provide #'require))))
