@@ -69,7 +69,7 @@
                                       #%declare)))
       #`(begin #,expanded (sml-begin x (exprs ...) body ...))]
      [_
-      #`(sml-begin x (#,expanded exprs ...) body ...)])])
+      #`(sml-begin x (b1 exprs ...) body ...)])])
 
 (module reader syntax/module-reader
   sml
