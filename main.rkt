@@ -2,6 +2,7 @@
 
 (require syntax/parse/define
          racket/format
+         racket/list
          (for-syntax racket/base
                      syntax/location
                      racket/syntax
@@ -15,6 +16,9 @@
          (all-from-out racket/format))
 
 (define-syntax-parser -app
+  [(_ #:ordered x:expr ...)
+   #:when (eq? (syntax-property this-syntax 'paren-shape) #\{)
+   (syntax/loc this-syntax (let () (sml-begin #f ordered-hash () x ...)))]
   [(_ x:expr ...)
    #:when (eq? (syntax-property this-syntax 'paren-shape) #\{)
    (syntax/loc this-syntax (let () (sml-begin #f hash () x ...)))]
@@ -70,6 +74,14 @@
       #`(begin #,expanded (sml-begin x proc (exprs ...) body ...))]
      [_
       #`(sml-begin x proc (b1 exprs ...) body ...)])])
+
+(define (ordered-hash . elems)
+  (let loop ([pairs '()]
+             [elems elems])
+    (cond [(null? elems) (reverse pairs)]
+          [else
+           (loop (cons (cons (first elems) (second elems)) pairs)
+                 (cddr elems))])))
 
 (module reader syntax/module-reader
   sml

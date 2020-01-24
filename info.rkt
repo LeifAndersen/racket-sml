@@ -4,5 +4,5 @@
 (define deps '("base"
                "at-exp-lib"))
 (define pkg-desk "S-Markup Language")
-(define version "0.0")
+(define version "0.0.1")
 (define pkg-authors '(leif))
