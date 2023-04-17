@@ -18,13 +18,13 @@
 (define-syntax-parser -app
   [(_ #:ordered x:expr ...)
    #:when (eq? (syntax-property this-syntax 'paren-shape) #\{)
-   (syntax/loc this-syntax (let () (sml-begin #f ordered-hash () x ...)))]
+   (syntax/loc this-syntax (let () (sml-begin #f ordered-hash #f () x ...)))]
   [(_ x:expr ...)
    #:when (eq? (syntax-property this-syntax 'paren-shape) #\{)
-   (syntax/loc this-syntax (let () (sml-begin #f hash () x ...)))]
+   (syntax/loc this-syntax (let () (sml-begin #f hash #f () x ...)))]
   [(_ x:expr ...)
    #:when (eq? (syntax-property this-syntax 'paren-shape) #\[)
-   (syntax/loc this-syntax (let () (sml-begin #f list () x ...)))]
+   (syntax/loc this-syntax (let () (sml-begin #f list #f () x ...)))]
   [(_ x ...+)
    (syntax/loc this-syntax (#%app x ...))])
 
@@ -42,23 +42,28 @@
   [(_ x:id proc:id exprs body ...)
    #'(#%module-begin
       (provide x)
-      (sml-begin x proc exprs body ...))])
+      (sml-begin x proc #f exprs body ...))])
 
 (define-syntax-parser sml-begin
-  [(_ #f proc:id (exprs ...))
+  [(_ #f proc:id #f (exprs ...))
    #:with (rev-exprs ...) (reverse (attribute exprs))
    #'(proc rev-exprs ...)]
-  [(_ x:id proc:id (exprs ...))
+  [(_ x:id proc:id #f (exprs ...))
    #:with (rev-exprs ...) (reverse (attribute exprs))
    #'(define x (proc rev-exprs ...))]
-  [(_ x proc:id (exprs ...) b1 body ...)
+  [(_ x:id proc:id inputs (exprs ...))
+   #:with (rev-exprs ...) (reverse (attribute exprs))
+   #'(define (x . inputs) (proc rev-exprs ...))]
+  [(_ x proc:id #f (exprs ...) #:inputs b1 body ...)
+   #'(sml-begin x proc b1 (exprs ...) body ...)]
+  [(_ x proc:id inputs (exprs ...) b1 body ...)
    (define expanded (local-expand #'b1 'module
                                   (append (kernel-form-identifier-list)
                                           (list #'provide #'require))))
    (syntax-parse expanded
      #:literals (begin)
      [(begin b ...)
-      #'(sml-begin x proc (exprs ...) b ... body ...)]
+      #'(sml-begin x proc inputs (exprs ...) b ... body ...)]
      [(id*:id . rest)
       #:when (ormap (lambda (kw) (free-identifier=? #'id* kw))
                     (syntax->list #'(require
@@ -71,9 +76,9 @@
                                       #%require
                                       #%provide
                                       #%declare)))
-      #`(begin #,expanded (sml-begin x proc (exprs ...) body ...))]
+      #`(begin #,expanded (sml-begin x proc inputs (exprs ...) body ...))]
      [_
-      #`(sml-begin x proc (b1 exprs ...) body ...)])])
+      #`(sml-begin x proc inputs (b1 exprs ...) body ...)])])
 
 (define (ordered-hash . elems)
   (let loop ([pairs '()]
