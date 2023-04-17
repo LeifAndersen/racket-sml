@@ -33,10 +33,10 @@ author: [{name: "Leif"
           location: "MA"}]
 ```
 
-Finally, double curly braces become strings, and can use Racket's `@-expressions` to escape to SML code. For example:
+Finally, double curly braces become strings, and can use Racket's `@-expressions` to escape to SML code. For example (using semi-colon for comments):
 
 ```
-#lang sml
+#lang sml ; readme.sml
 title: "A readme file"
 author: [{name: "Leif"
           location: {{Cambridge, @MA}}}
@@ -51,12 +51,36 @@ Otherwise the syntax is that of Racket with s-expressions enabled.
 The data in each SML program is provided in a hash table called `doc`. Using the repl with the above program:
 
 ```
-> (require readme.sml)
-> (doc)
+> (require "readme.sml")
+> doc
 '#hash((author . (#hash((location . "Cambridge, Massachusetts") (name . "Leif")) #hash((location . "Bostn, Massachusetts") (name . "Ben")))) (title . "A readme file"))
 ```
 
 And you can get the data using Racket's dictionary API.
+
+Additionally, if you need runtime parameters to build, this can be done with the `#:inputs` keyword:
+
+```
+#lang sml ; data.sml
+#:inputs (hyperlink)
+
+(define project
+  {name: "SML"
+   link: "https://github.com/LeifAndersen/racket-sml"})
+
+text:
+{{Find SML at @hyperlink[project].}}
+```
+
+Now doc is a function that takes the `#:inputs` expression:
+
+```
+> (require "data.sml")
+> doc
+#<procedure:doc>
+> (doc (lambda (a) (hash-ref a 'link)))
+'#hash((text . "Find SML at https://github.com/LeifAndersen/racket-sml"))
+```
 
 
 # FAQ
